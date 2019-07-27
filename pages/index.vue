@@ -1,5 +1,31 @@
 <template>
-  <div class="md-layout md-alignment-center">
+  <div class="md-layout md-alignment-center" style="margin: 4em 0;">
+    <md-toolbar class="fixed-toolbar" elevation="1">
+      <md-button class="md-icon-button">
+        <md-icon>menu</md-icon>
+      </md-button>
+      <nuxt-link class="md-primary md-title" to="/">
+        NuxtNews
+      </nuxt-link>
+      <div class="md-toolbar-section-end">
+        <md-button to="/login">Login</md-button>
+        <md-button to="/register">Register</md-button>
+        <md-button @click="showSidePanel = true" class="md-accent">Categories</md-button>
+      </div>
+    </md-toolbar>
+    <md-drawer class="md-right" md-fixed :md-active.sync="showSidePanel">
+      <md-toolbar :md-elevation="1">
+        <span class="md-title">News categories</span>
+      </md-toolbar>
+      <md-progress-bar v-if="loading" md-mode="indeterminate"></md-progress-bar>
+      <md-list>
+        <md-subheader class="md-primary">Categories</md-subheader>
+        <md-list-item v-for="(newsCategory, i) in newsCategories" :key="i" @click="loadCategory(newsCategory.path)">
+          <md-icon :class="newsCategory.path === category ? 'md-primary' : ''">{{newsCategory.icon}}</md-icon>
+          <span class="md-list-item-text">{{newsCategory.name}}</span>
+        </md-list-item>
+      </md-list>
+    </md-drawer>
     <div class="md-layout-item md-size-95">
       <md-content class="md-layout md-gutter" style="background: #007998; padding: 1em;">
         <ul v-for="headline in headlines" :key="headline.id" class="md-layout-item md-large-size-25 md-medium-size-33 md-small-size-50 md-xsmall-size-100">
@@ -44,9 +70,37 @@
 
 <script>
     export default {
-        async asyncData({ app }){
-            const topHeadlines = await app.$axios.$get('/api/top-headlines?country=us');
-            return { headlines: topHeadlines.articles }
+        data: () => ({
+            showSidePanel: false,
+            newsCategories: [
+                { name: 'Top Headlines', path: '', icon: 'today' },
+                { name: 'Technology', path: 'technology', icon: 'keyboard' },
+                { name: 'Business', path: 'business', icon: 'business_center' },
+                { name: 'Entertainment', path: 'entertainment', icon: 'weekend' },
+                { name: 'Health', path: 'health', icon: 'fastfood' },
+                { name: 'Science', path: 'science', icon: 'fingerprint' },
+                { name: 'Sports', path: 'sports', icon: 'golf_course' }
+            ]
+        }),
+        async fetch({ store }){
+            await store.dispatch('loadHeadlines', `/api/top-headlines?country=us&category=${store.state.category}`)
+        },
+        computed: {
+            headlines(){
+                return this.$store.getters.headlines;
+            },
+            category(){
+                return this.$store.getters.category;
+            },
+            loading(){
+                return this.$store.getters.loading
+            }
+        },
+        methods: {
+            async loadCategory(category){
+                this.$store.commit('setCategory', category);
+                await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=us&category=${this.category}`)
+            }
         }
     }
 </script>
@@ -54,5 +108,11 @@
 <style scoped>
   .small-icon{
     font-size: 18px !important;
+  }
+
+  .fixed-toolbar{
+    position: fixed;
+    z-index: 5;
+    top: 0;
   }
 </style>
