@@ -1,7 +1,7 @@
 <template>
   <div class="md-layout md-alignment-center" style="margin: 4em 0;">
     <md-toolbar class="fixed-toolbar" elevation="1">
-      <md-button class="md-icon-button">
+      <md-button @click="showLeftSidePanel = true" class="md-icon-button">
         <md-icon>menu</md-icon>
       </md-button>
       <nuxt-link class="md-primary md-title" to="/">
@@ -10,10 +10,25 @@
       <div class="md-toolbar-section-end">
         <md-button to="/login">Login</md-button>
         <md-button to="/register">Register</md-button>
-        <md-button @click="showSidePanel = true" class="md-accent">Categories</md-button>
+        <md-button @click="showRightSidePanel = true" class="md-accent">Categories</md-button>
       </div>
     </md-toolbar>
-    <md-drawer class="md-right" md-fixed :md-active.sync="showSidePanel">
+    <md-drawer md-fixed :md-active.sync="showLeftSidePanel">
+      <md-toolbar md-elevation="1">
+        <span class="md-title">Personal Feed</span>
+        <md-progress-bar v-if="loading" md-mode="indeterminate"></md-progress-bar>
+        <md-field>
+          <label for="country">Country</label>
+          <md-select @input="changeCountry" :value="country" name="country" id="country">
+            <md-option value="us">United States</md-option>
+            <md-option value="ca">Canada</md-option>
+            <md-option value="de">Germany</md-option>
+            <md-option value="ua">Ukraine</md-option>
+          </md-select>
+        </md-field>
+      </md-toolbar>
+    </md-drawer>
+    <md-drawer class="md-right" md-fixed :md-active.sync="showRightSidePanel">
       <md-toolbar :md-elevation="1">
         <span class="md-title">News categories</span>
       </md-toolbar>
@@ -71,7 +86,8 @@
 <script>
     export default {
         data: () => ({
-            showSidePanel: false,
+            showRightSidePanel: false,
+            showLeftSidePanel: false,
             newsCategories: [
                 { name: 'Top Headlines', path: '', icon: 'today' },
                 { name: 'Technology', path: 'technology', icon: 'keyboard' },
@@ -83,7 +99,7 @@
             ]
         }),
         async fetch({ store }){
-            await store.dispatch('loadHeadlines', `/api/top-headlines?country=us&category=${store.state.category}`)
+            await store.dispatch('loadHeadlines', `/api/top-headlines?country=${store.state.country}&category=${store.state.category}`)
         },
         computed: {
             headlines(){
@@ -94,12 +110,26 @@
             },
             loading(){
                 return this.$store.getters.loading
+            },
+            country(){
+                return this.$store.getters.country
+            }
+        },
+        watch: {
+            async country() {
+                await this.$store.dispatch(
+                    "loadHeadlines",
+                    `/api/top-headlines?country=${this.country}&category=${this.category}`
+                );
             }
         },
         methods: {
             async loadCategory(category){
                 this.$store.commit('setCategory', category);
-                await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=us&category=${this.category}`)
+                await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=${this.country}&category=${this.category}`)
+            },
+            changeCountry(country) {
+                this.$store.commit("setCountry", country);
             }
         }
     }

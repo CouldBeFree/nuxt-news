@@ -1,37 +1,42 @@
-import Vuex from 'vuex'
+import Vuex from "vuex";
 
 const createStore = () => {
   return new Vuex.Store({
     state: {
       headlines: [],
+      loading: false,
       category: '',
-      loading: false
+      country: 'us'
     },
     mutations: {
-      setHeadlines(state, headlines){
+      setHeadlines(state, headlines) {
         state.headlines = headlines;
       },
-      setLoading(state, loading){
+      setLoading(state, loading) {
         state.loading = loading;
       },
-      setCategory(state, category){
+      setCategory(state, category) {
         state.category = category;
+      },
+      setCountry(state, country) {
+        state.country = country;
       }
     },
     actions: {
-      async loadHeadlines({ commit }, apiUrl){
+      async loadHeadlines({ commit }, apiUrl) {
         commit('setLoading', true);
         const { articles } = await this.$axios.$get(apiUrl);
         commit('setLoading', false);
-        commit('setHeadlines', articles)
+        commit("setHeadlines", articles);
       }
     },
     getters: {
       headlines: state => state.headlines,
+      loading: state => state.loading,
       category: state => state.category,
-      loading: state => state.loading
+      country: state => state.country
     }
-  })
+  });
 };
 
 export default createStore;
