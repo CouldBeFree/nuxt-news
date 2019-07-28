@@ -59,6 +59,10 @@ export default {
     "/register/": {
       target: "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBz0us1giAY4bYLK2f6K-Nrf9J611w0qlo",
       pathRewrite: { "^/register/": "" }
+    },
+    "/login/": {
+      target: "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBz0us1giAY4bYLK2f6K-Nrf9J611w0qlo",
+      pathRewrite: { "^/login/": "" }
     }
   },
   env: {
