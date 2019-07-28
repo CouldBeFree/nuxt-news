@@ -4,6 +4,7 @@
 
 <script>
     export default {
+        middleware: 'auth',
         name: "index"
     }
 </script>

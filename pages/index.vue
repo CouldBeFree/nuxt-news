@@ -8,8 +8,17 @@
         NuxtNews
       </nuxt-link>
       <div class="md-toolbar-section-end">
-        <md-button to="/login">Login</md-button>
-        <md-button to="/register">Register</md-button>
+        <template v-if="isAuthenticated">
+          <md-button>
+            <md-avatar><img :src="user.avatar" :alt="user.email"></md-avatar>
+            {{user.email}}
+          </md-button>
+          <md-button>Logout</md-button>
+        </template>
+        <template v-else>
+          <md-button to="/login">Login</md-button>
+          <md-button to="/register">Register</md-button>
+        </template>
         <md-button @click="showRightSidePanel = true" class="md-accent">Categories</md-button>
       </div>
     </md-toolbar>
@@ -113,6 +122,12 @@
             },
             country(){
                 return this.$store.getters.country
+            },
+            isAuthenticated(){
+                return this.$store.getters.isAuthenticated
+            },
+            user(){
+                return this.$store.getters.user
             }
         },
         watch: {
