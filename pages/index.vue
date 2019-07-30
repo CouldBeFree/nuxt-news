@@ -36,6 +36,29 @@
           </md-select>
         </md-field>
       </md-toolbar>
+      <md-empty-state class="md-primary" v-if="feed.length === 0 && !user" md-icon="bookmarks" md-label="Nothing in Feed"
+        md-description="Login to bookmark headlines">
+        <md-button to="/login" class="md-primary md-raised">Login</md-button>
+      </md-empty-state>
+      <md-empty-state v-else-if="feed.length === 0" class="md-accent" md-icon="bookmark_outline" md-label="Nothing if Feed" md-description="Anything
+      you bookmark will be safely stored here">
+      </md-empty-state>
+      <md-list class="md-triple-line" v-else v-for="headline in feed" :key="headline.id">
+        <md-list-item>
+          <md-avatar>
+            <img :src="headline.urlToImage" :alt="headline.title">
+          </md-avatar>
+          <div class="md-list-item-text">
+            <span><a :href="headline.url" target="_blank">{{headline.title}}</a></span>
+            <span>{{headline.source.name}}</span>
+            <span>View comments</span>
+          </div>
+          <md-button @click="removeHeadlineFromFeed(headline)" class="md-icon-button md-list-action">
+            <md-icon class="md-accent">delete</md-icon>
+          </md-button>
+        </md-list-item>
+        <md-divider class="md-inset"></md-divider>
+      </md-list>
     </md-drawer>
     <md-drawer class="md-right" md-fixed :md-active.sync="showRightSidePanel">
       <md-toolbar :md-elevation="1">
@@ -77,10 +100,10 @@
               </md-card-header>
               <md-card-content>{{headline.description}}</md-card-content>
               <md-card-actions>
-                <md-button class="md-icon-button">
+                <md-button @click="addHeadlineToFeed(headline)" class="md-icon-button" :class="isInFeed(headline.title)">
                   <md-icon>bookmark</md-icon>
                 </md-button>
-                <md-button class="md-icon-button">
+                <md-button @click="saveHeadline(headline)" class="md-icon-button">
                   <md-icon>message</md-icon>
                 </md-button>
               </md-card-actions>
@@ -93,64 +116,85 @@
 </template>
 
 <script>
-    export default {
-        data: () => ({
-            showRightSidePanel: false,
-            showLeftSidePanel: false,
-            newsCategories: [
-                { name: 'Top Headlines', path: '', icon: 'today' },
-                { name: 'Technology', path: 'technology', icon: 'keyboard' },
-                { name: 'Business', path: 'business', icon: 'business_center' },
-                { name: 'Entertainment', path: 'entertainment', icon: 'weekend' },
-                { name: 'Health', path: 'health', icon: 'fastfood' },
-                { name: 'Science', path: 'science', icon: 'fingerprint' },
-                { name: 'Sports', path: 'sports', icon: 'golf_course' }
-            ]
-        }),
-        async fetch({ store }){
-            await store.dispatch('loadHeadlines', `/api/top-headlines?country=${store.state.country}&category=${store.state.category}`)
-        },
-        computed: {
-            headlines(){
-                return this.$store.getters.headlines;
-            },
-            category(){
-                return this.$store.getters.category;
-            },
-            loading(){
-                return this.$store.getters.loading
-            },
-            country(){
-                return this.$store.getters.country
-            },
-            isAuthenticated(){
-                return this.$store.getters.isAuthenticated
-            },
-            user(){
-                return this.$store.getters.user
-            }
-        },
-        watch: {
-            async country() {
-                await this.$store.dispatch(
-                    "loadHeadlines",
-                    `/api/top-headlines?country=${this.country}&category=${this.category}`
-                );
-            }
-        },
-        methods: {
-            async loadCategory(category){
-                this.$store.commit('setCategory', category);
-                await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=${this.country}&category=${this.category}`)
-            },
-            changeCountry(country) {
-                this.$store.commit("setCountry", country);
-            },
-            logoutUser(){
-                this.$store.dispatch('logoutUser')
-            }
+  export default {
+    data: () => ({
+      showRightSidePanel: false,
+      showLeftSidePanel: false,
+      newsCategories: [
+        { name: 'Top Headlines', path: '', icon: 'today' },
+        { name: 'Technology', path: 'technology', icon: 'keyboard' },
+        { name: 'Business', path: 'business', icon: 'business_center' },
+        { name: 'Entertainment', path: 'entertainment', icon: 'weekend' },
+        { name: 'Health', path: 'health', icon: 'fastfood' },
+        { name: 'Science', path: 'science', icon: 'fingerprint' },
+        { name: 'Sports', path: 'sports', icon: 'golf_course' }
+      ]
+    }),
+    async fetch({ store }){
+      await store.dispatch('loadHeadlines', `/api/top-headlines?country=${store.state.country}&category=${store.state.category}`);
+      await store.dispatch('loadUserFeed');
+    },
+    computed: {
+      headlines(){
+        return this.$store.getters.headlines;
+      },
+      category(){
+        return this.$store.getters.category;
+      },
+      loading(){
+        return this.$store.getters.loading
+      },
+      country(){
+        return this.$store.getters.country
+      },
+      isAuthenticated(){
+        return this.$store.getters.isAuthenticated
+      },
+      user(){
+        return this.$store.getters.user
+      },
+      feed(){
+        return this.$store.getters.feed
+      }
+    },
+    watch: {
+      async country() {
+        await this.$store.dispatch(
+                "loadHeadlines",
+                `/api/top-headlines?country=${this.country}&category=${this.category}`
+        );
+      }
+    },
+    methods: {
+      async loadCategory(category){
+        this.$store.commit('setCategory', category);
+        await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=${this.country}&category=${this.category}`)
+      },
+      changeCountry(country) {
+        this.$store.commit("setCountry", country);
+      },
+      logoutUser(){
+        this.$store.dispatch('logoutUser')
+      },
+      async addHeadlineToFeed(headline){
+        if(this.user){
+          await this.$store.dispatch('addHeadlineToFeed', headline);
         }
+      },
+      isInFeed(title){
+        const inFeed = this.feed.findIndex(headline => headline.title === title) > -1;
+        return inFeed ? 'md-primary' : '';
+      },
+      async removeHeadlineFromFeed(headline){
+        await this.$store.dispatch('removeHeadlineFromFeed', headline);
+      },
+      async saveHeadline(headline){
+        await this.$store.dispatch('saveHeadline', headline).then(() => {
+          this.$router.push(`/headlines/${headline.slug}`)
+        });
+      }
     }
+  }
 </script>
 
 <style scoped>
